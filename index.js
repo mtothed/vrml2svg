@@ -72,6 +72,25 @@ carrier.carry(fs.createReadStream('test.wrl'), function (line) {
 				});
 				STATES[0].push.apply(STATES[0], entries);
 				line = '';
+			
+			} else if (line.match(/^\s*\w+/)) {
+				var key = line.match(/^\s*(\w+)/)[1];
+				line = line.replace(/^\s*(\w+)/, '');
+
+				var entries = line.split(/\s+|\s*\,\s*/g).filter(function (a) {
+					return a;
+				}).map(function (a) {
+					var arg = a.replace(/^\s+|\s+$/g, '');
+					if (String(parseFloat(arg)) == arg) {
+						return parseFloat(arg);
+					}
+					return arg;
+				});
+				STATES[0][key] = entries;
+				line = '';
+
+				console.log('PROP', key, entries);
+
 			} else {
 				break;
 			}

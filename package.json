@@ -1,5 +1,5 @@
 {
-  "name": "vrml2js",
+  "name": "vrml2svg",
   "version": "0.0.0",
   "description": "This is a really bad VRML parser.",
   "main": "index.js",
@@ -7,9 +7,9 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "carrier": "~0.1.13",
-    "mrcolor": "0.0.1"
+    "clipper": "git+https://github.com/tcr/clipper.git"
   }
 }

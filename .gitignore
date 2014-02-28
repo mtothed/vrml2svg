@@ -2,4 +2,4 @@
 *.wrl
 node_modules
 test.json
-
+output.*

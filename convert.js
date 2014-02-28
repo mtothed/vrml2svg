@@ -1,84 +1,87 @@
 var fs = require('fs');
 var mr = require('mrcolor');
+var clipper = require('clipper');
 
 
-var xOffset = 1000;
-var yOffset = 1000;
+var unionScale = 1e6;
+var outputScale = 1e4;
+
+var xOffset = 500;
+var yOffset = 500;
 
 var header = '<?xml version="1.0" encoding="utf-8"?>' +
 '<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">' + 
 '<svg xmlns="http://www.w3.org/2000/svg" version="1.1">' + 
-'<g id="viewport" transform="translate(' + xOffset + ', ' + yOffset + ')">\n' + 
-'<g>';
+'<g id="viewport" transform="translate(' + xOffset + ', ' + yOffset + ')">\n'
 
-var middle = 
-'</g>\n' + 
-'<g>';
-
-var footer =
-'</g>\n' + 
-'</g>' + 
+var footer = '\n</g>' + 
 '</svg>';
 
-function multitosvg (str) {
-	return str.replace(/^\s*MULTIPOLYGON\s*\(\(\(/, 'M')
-		.replace(/\)\),\s*\(\(/g, ' Z M')
-		.replace(/\),\s*\(/g, ' Z M')
-		.replace(/,\s*/g, ' L')
-		.replace(/\)\)\)\s*$/, ' Z');
-}
+var test = require('./test.json');
 
-function polytosvg (str) {
-	return str.replace(/^\s*POLYGON\s*\(\(/, 'M')
-		.replace(/,\s*/g, ' L')
-		.replace(/\)\)\s*$/, ' Z')
+function clippertosvg (clip) {
+	var str = [];
+
+	for (var i = 0; i < clip.out.length; ) {
+		var poly = clip.out[i++];
+		var points = [];
+		for (var j = 0; j < poly.length; ) {
+			points.push((poly[j++]/(unionScale/outputScale)) + ' ' + (poly[j++]/(unionScale/outputScale)))
+		}
+		str.push('M' + points.join(' L') + ' Z')
+	}
+
+	for (var i = 0; i < clip.in.length; ) {
+		var poly = clip.in[i++];
+		var points = [];
+		for (var j = 0; j < poly.length; ) {
+			points.push((poly[j++]/(unionScale/outputScale)) + ' ' + (poly[j++]/(unionScale/outputScale)))
+		}
+		str.push('M' + points.join(' L') + ' Z')
+	}
+
+	return str.join(' ');
 }
 
 function wktToSvg (arr) {
 	return header
 		+ arr.map(function (a, i) {
-			if (!a) { return ''; }
-			return '<path fill="' + 'rgb(' + colors[i].rgb().join(',') + ')' + '" d=' + JSON.stringify(a.match(/^\s*MULTI/) ? multitosvg(a) : polytosvg(a)) + '/>';
-		}).join(middle)
+			if (!a.out.length) return '';
+
+			var appearance = test[i].children[0]['appearance Appearance'];
+			var material = appearance[Object.keys(appearance)];
+
+			console.log(i);
+
+			return '<path fill-rule="evenodd" fill="' + 'rgb(' + material.diffuseColor.map(function (a) {
+				return (a*100).toFixed(2) + '%'
+			}).join(',') + ')' + '" d='
+				+ JSON.stringify(clippertosvg(a))
+				+ '/>';
+		}).join('\n')
 		+ footer;
 }
 
-function binaryBin (arr, fn) {
-	console.error('... binning', arr.length);
-	if (arr.length == 1) {
-		return arr[0];
-	} else if (arr.length == 2) {
-		return fn(arr[0], arr[1]);
-	} else {
-		var results = [];
-		for (var i = 0; i < arr.length; ) {
-			try {
-				if (!arr[i + 1]) {
-					results.push(arr[i++]);
-				} else {
-					results.push(fn(arr[i++], arr[i++]));
-				}
-			} catch (e) {
-				console.error(e);
-			}
-		}
-		var whylord = results.filter(function (a) {
-			return !a.isGeometryCollectionBase()
-		});
-		if (whylord.length == 0) {
-			throw 'why lord';
-		}
-		return binaryBin(whylord, fn);
+function order (poly) {
+	var a = poly[0]; b = poly[1]; c = poly[2];
+
+	// http://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order
+	var orderup
+		= (b[0] - a[0])*(b[1] + a[1])
+		+ (c[0] - b[0])*(c[1] + b[1])
+		+ (a[0] - c[0])*(a[1] + c[1])
+
+	if (orderup > 0) {
+		var tmp = poly[2];
+		poly[2] = poly[0];
+		poly[0] = poly[2];
+		return order(poly);
 	}
 }
 
 
-var test = require('./test.json');
-
-var colors = mr.take(test.length);
-
 function gridify (a) {
-	return Number(a)*10000 | 0;
+	return Number(a)*unionScale | 0;
 }
 
 var res = test.map(function (entry, count) {
@@ -102,42 +105,16 @@ var res = test.map(function (entry, count) {
 	for (var i = 0; i < coordIndexes.length; i++) {
 		var points = [];
 		while (coordIndexes[i] != -1) {
-			points.push(coordIndexes[i++]);
+			points.push(coords[coordIndexes[i++]]);
 		}
-		
-		var poly = points.map(function (i) { return coords[i].join(' '); });
-		poly.push(poly[0]); // close triangles
-		polys.push('POLYGON((' + poly.join(', ') + '))');
+		order(points);
+		polys.push([].concat.apply([], points));
 	}
 
-	// console.log(polys);	
-
-	var jsts = require('jsts');
-	var reader = new jsts.io.WKTReader();
-
-	try {
-		var result = binaryBin(polys.map(function (str) {
-			return reader.read(str);
-		}), function (a, b){
-			return a.union(b);
-		});
-	} catch (e) {
-		console.error('ERROR, skipping', e);
-		return '';
-	}
-
-	// console.log(result.isGeometryCollection());
-
-	var out = new jsts.io.WKTWriter().write(result);
-
-var svg = wktToSvg([out]);
-// console.log(svg);
-fs.writeFileSync('svg/' + count + '.svg', svg);
-
-	return out;
+	var union = clipper.union.apply(clipper, polys);
+	return union;
 });
 
 
 var svg = wktToSvg(res);
-// console.log(svg);
 fs.writeFileSync('output.svg', svg);
