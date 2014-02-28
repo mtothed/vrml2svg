@@ -1,0 +1,5 @@
+*.svg
+*.wrl
+node_modules
+test.json
+
