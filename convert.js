@@ -62,7 +62,7 @@ function wktToSvg (arr) {
 		+ footer;
 }
 
-function order (poly) {
+function isordered (poly) {
 	var a = poly[0]; b = poly[1]; c = poly[2];
 
 	// http://stackoverflow.com/questions/1165647/how-to-determine-if-a-list-of-polygon-points-are-in-clockwise-order
@@ -71,7 +71,11 @@ function order (poly) {
 		+ (c[0] - b[0])*(c[1] + b[1])
 		+ (a[0] - c[0])*(a[1] + c[1])
 
-	if (orderup > 0) {
+	return orderup < 0;
+}
+
+function order (poly) {
+	if (isordered(poly) > 0) {
 		var tmp = poly[2];
 		poly[2] = poly[0];
 		poly[0] = poly[2];
@@ -107,8 +111,9 @@ var res = test.map(function (entry, count) {
 		while (coordIndexes[i] != -1) {
 			points.push(coords[coordIndexes[i++]]);
 		}
-		order(points);
-		polys.push([].concat.apply([], points));
+		if (isordered(points)) {
+			polys.push([].concat.apply([], points));
+		}
 	}
 
 	var union = clipper.union.apply(clipper, polys);
