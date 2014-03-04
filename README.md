@@ -3,9 +3,18 @@
 This is a really bad hack, hope you enjoy it!
 
 ```
-index.js -> converts test.wrl to test.json
-convert.js -> converts test.json to output.svg
+npm install -g vrml2svg
 ```
+
+Then
+
+```
+vrml2svg input.wrl output.svg
+```
+
+## contribute
+
+Please help me, I have no idea how to make this useful
 
 ## license
 
