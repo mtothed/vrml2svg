@@ -13,6 +13,6 @@
   "license": "MIT",
   "dependencies": {
     "carrier": "~0.1.13",
-    "clipper": "git+https://github.com/tcr/clipper.git"
+    "clipper": "~1.1.0"
   }
 }
