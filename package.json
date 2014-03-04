@@ -1,8 +1,11 @@
 {
   "name": "vrml2svg",
-  "version": "0.0.0",
+  "version": "0.1.0",
   "description": "This is a really bad VRML parser.",
   "main": "index.js",
+  "bin": {
+    "vrml2svg": "index.js"
+  },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
