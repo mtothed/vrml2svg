@@ -4,7 +4,7 @@ var carrier = require('carrier');
 
 var STATES = [[]];
 
-exports.convert = function (input, next) {
+exports.parse = function (input, next) {
 	carrier.carry(input, function (line) {
 		var indent = line.match(/^(  )*/)[0].length / 2;
 

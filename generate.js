@@ -46,7 +46,7 @@ exports.generate = function (output, test, next) {
 	function wktToSvg (arr) {
 		return header
 			+ arr.map(function (a, i) {
-				if (!a.out.length) return '';
+				if (!a.out || !a.out.length) return '';
 
 				var appearance = test[i].children[0]['appearance Appearance'];
 				var material = appearance[Object.keys(appearance)];
