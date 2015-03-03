@@ -3,8 +3,8 @@ var mr = require('mrcolor');
 var clipper = require('clipper');
 
 
-var unionScale = 1e6;
-var outputScale = 1e4;
+var unionScale = 1;
+var outputScale = 1;
 
 var xOffset = 500;
 var yOffset = 500;
@@ -109,17 +109,16 @@ exports.generate = function (output, test, next) {
 		for (var i = 0; i < coordIndexes.length; i++) {
 			var points = [];
 			while (coordIndexes[i] != -1) {
-				points.unshift(coords[coordIndexes[i++]]);
+				points.push(coords[coordIndexes[i++]]);
 			}
 			if (isordered(points)) {
-				polys.unshift([].concat.apply([], points));
+				polys.push([].concat.apply([], points));
 			}
 		}
 
 		var union = clipper.union.apply(clipper, polys);
 		return union;
 	});
-
 
 	var svg = wktToSvg(res);
 	output.write(svg);
