@@ -109,10 +109,10 @@ exports.generate = function (output, test, next) {
 		for (var i = 0; i < coordIndexes.length; i++) {
 			var points = [];
 			while (coordIndexes[i] != -1) {
-				points.push(coords[coordIndexes[i++]]);
+				points.unshift(coords[coordIndexes[i++]]);
 			}
 			if (isordered(points)) {
-				polys.push([].concat.apply([], points));
+				polys.unshift([].concat.apply([], points));
 			}
 		}
 
